@@ -2,7 +2,7 @@
 # ----------------------------------------------------
 # Build image:   docker build -t esp32-dashboard .
 # Run container: docker run -p 8501:8501 esp32-dashboard
-# Optionally mount data: -v $(pwd)/sensor_data.csv:/app/sensor_data.csv
+# Optionally mount data: -v $(pwd)/data/sensor_data.csv:/app/data/sensor_data.csv
 # ----------------------------------------------------
 
 # 1. Base image (slim Python)
