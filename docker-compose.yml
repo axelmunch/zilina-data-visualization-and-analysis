@@ -1,11 +1,9 @@
-version: "3.8"
-
 services:
   influxdb:
     image: influxdb:2.7
     container_name: influxdb
     ports:
-      - "8086:8086"
+      - 8086:8086
     volumes:
       - influxdb_data:/var/lib/influxdb2
     environment:
@@ -18,14 +16,15 @@ services:
     restart: unless-stopped
 
   streamlit:
+    image: esp32-dashboard:1.0
     build:
-      context: .
+      context: frontend
       dockerfile: Dockerfile
     container_name: esp32-dashboard
     ports:
-      - "8501:8501"
+      - 8501:8501
     volumes:
-      - ./data/sensor_data.csv:/app/data/sensor_data.csv
+      - ./data/sensor_data.csv:/app/data/sensor_data.csv:ro
     depends_on:
       - influxdb
     restart: unless-stopped
