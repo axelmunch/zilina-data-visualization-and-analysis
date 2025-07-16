@@ -46,7 +46,7 @@ DATA_SOURCE: Literal["csv", "influxdb"] = st.sidebar.radio(
 )
 
 # ---------- CSV settings ----------
-CSV_PATH = Path("data/sensor_data.csv")
+CSV_PATH = Path("data/query.csv")
 
 # ---------- InfluxDB settings ----------
 if DATA_SOURCE == "influxdb":
