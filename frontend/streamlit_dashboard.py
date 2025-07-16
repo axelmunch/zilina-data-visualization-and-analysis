@@ -8,18 +8,6 @@ Install requirements with:
 
 Launch with:
     streamlit run streamlit_dashboard.py
-
-The app can connect to **InfluxDB 2.x** (recommended) or fall back to a local CSV.
-Place a `sensor_data.csv` next to this script with columns:
-    timestamp,sensor_id,sensor_type,value,x,y
-
-InfluxDB schema expected:
-    • _measurement = "sensor_data"
-    • Tags  : sensor_id, sensor_type
-    • Fields: value (float)  x (float)  y (float)
-    • _time : timestamp automatically set by InfluxDB
-
-Bucket retention and query window are configurable in the sidebar.
 """
 
 from __future__ import annotations
@@ -41,20 +29,18 @@ st.set_page_config(page_title="ESP32 Sensor Dashboard", layout="wide", page_icon
 
 st.sidebar.title("📡 Data Source")
 
-DATA_SOURCE: Literal["csv", "influxdb"] = st.sidebar.radio(
-    "Choose backend", ("csv", "influxdb"), help="Where to load data from"
-)
+DATA_SOURCE: Literal["influxdb"] = "influxdb"
 
 # ---------- CSV settings ----------
-CSV_PATH = Path("data/query.csv")
+CSV_PATH = Path("data/sensor_data.csv")
 
 # ---------- InfluxDB settings ----------
 if DATA_SOURCE == "influxdb":
     st.sidebar.subheader("InfluxDB config")
-    INFLUX_URL = st.sidebar.text_input("URL", "http://localhost:8086")
-    INFLUX_TOKEN = st.sidebar.text_input("API token", value="", type="password")
-    INFLUX_ORG = st.sidebar.text_input("Org", "esp32-org")
-    INFLUX_BUCKET = st.sidebar.text_input("Bucket", "esp32")
+    INFLUX_URL = "http://influxdb:8086"
+    INFLUX_TOKEN = "klQGaUK53OtG1Bzk1Ezon9N-_7fM9TSSMHOsivQoFthzGgH_53E1GhOiFoCNq8Y92y64BKx0gtML12N43fEyoA=="
+    INFLUX_ORG = "my-org"
+    INFLUX_BUCKET = "sensor_data"
     QUERY_WINDOW_HOURS = st.sidebar.number_input(
         "Look-back window (h)", min_value=1, max_value=720, value=24, step=1
     )
@@ -96,22 +82,35 @@ def load_data(source: str) -> pd.DataFrame:
         query_api = client.query_api()
 
         flux_query = f"""
-        from(bucket: \"{INFLUX_BUCKET}\")
-            |> range(start: -{QUERY_WINDOW_HOURS}h)
-            |> filter(fn: (r) => r[\"_measurement\"] == \"sensor_data\")
-            |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\")
-            |> keep(columns: [\"_time\", \"sensor_id\", \"sensor_type\", \"value\", \"x\", \"y\"])
+        import "influxdata/influxdb/schema"
+
+        from(bucket: "{INFLUX_BUCKET}")
+          |> range(start: -{QUERY_WINDOW_HOURS}h)
+          |> filter(fn: (r) => r._measurement =~ /.*/)
+          |> schema.fieldsAsCols()
+          |> keep(columns: ["_time", "_measurement", "device", "sensor", "x", "y", "z", "temperature_c", "distance_cm", "distance_mm", "pressure_pa", "strain"])
         """
+
         dfs = query_api.query_data_frame(flux_query)
         if isinstance(dfs, list):
             df = pd.concat(dfs, ignore_index=True)
         else:
             df = dfs
-        df = df.rename(columns={"_time": "timestamp"})
+
+        df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
+
+        value_columns = ["x", "y", "z", "temperature_c", "distance_cm", "distance_mm", "pressure_pa", "strain"]
+        df = df.melt(
+            id_vars=["timestamp", "sensor_id", "sensor", "_measurement"],
+            value_vars=[col for col in value_columns if col in df.columns],
+            var_name="sensor_type",
+            value_name="value",
+        )
+        df = df.dropna(subset=["value"])
+        df = df.sort_values("timestamp")
         client.close()
-    # Ensure proper dtypes
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
-    df = df.sort_values("timestamp")
+
     return df
 
 
@@ -135,7 +134,6 @@ def _generate_synthetic(n: int = 10_000) -> pd.DataFrame:
     }
     return pd.DataFrame(data)
 
-
 ############
 # MAIN APP #
 ############
@@ -145,15 +143,15 @@ def main():
     st.header("ESP32 Multi-Sensor Dashboard")
     df = load_data(DATA_SOURCE)
 
+    if df.empty:
+        st.warning("No data available.")
+        return
+
     # ---------- Sidebar filters ----------
     sensor_types = sorted(df["sensor_type"].unique())
     selected_types = st.sidebar.multiselect(
         "Sensor types", sensor_types, default=sensor_types
     )
-
-    if df.empty:
-        st.warning("No data available.")
-        return
 
     min_time, max_time = df["timestamp"].min(), df["timestamp"].max()
     min_time, max_time = min_time.to_pydatetime(), max_time.to_pydatetime()
@@ -186,13 +184,13 @@ def main():
                 y="value",
                 color="sensor_type",
                 line_group="sensor_id",
-                hover_data=["sensor_id"],
+                hover_data=["sensor_id", "_measurement", "sensor"],
             )
             st.plotly_chart(fig, use_container_width=True)
 
     with tab2:
         st.subheader("Spatial Heatmap (latest snapshot)")
-        if {"x", "y"}.issubset(filtered.columns):
+        if {"x", "y"}.issubset(df.columns):
             latest_ts = filtered["timestamp"].max()
             latest = filtered[filtered["timestamp"] == latest_ts]
             if latest.empty:
@@ -215,7 +213,10 @@ def main():
 
     # ---------- Auto‑refresh ----------
     if REFRESH_EVERY_SEC > 0:
-        # TODO
-        # st.experimental_rerun()
-        # st.rerun()
-        pass
+        import time
+        time.sleep(REFRESH_EVERY_SEC)
+        st.rerun()
+
+
+if __name__ == "__main__":
+    main()
