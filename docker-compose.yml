@@ -29,5 +29,12 @@ services:
       - influxdb
     restart: unless-stopped
 
+
+  data_gen:
+    build: ./data_gen
+    container_name: data-generator
+    depends_on:
+      - influxdb
+
 volumes:
   influxdb_data:
