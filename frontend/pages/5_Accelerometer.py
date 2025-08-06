@@ -1,5 +1,5 @@
-import streamlit as st
 import plotly.express as px
+import streamlit as st
 from utils import load_data
 
 st.set_page_config(layout="wide")
@@ -18,6 +18,6 @@ else:
         y="value",
         color="sensor_type",
         line_group="sensor_id",
-        title="Acceleration per Axis Over Time"
+        title="Acceleration per Axis Over Time",
     )
     st.plotly_chart(fig, use_container_width=True)

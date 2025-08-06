@@ -1,5 +1,5 @@
-import streamlit as st
 import plotly.express as px
+import streamlit as st
 from utils import load_data
 
 st.set_page_config(layout="wide")
@@ -17,6 +17,6 @@ else:
         x="timestamp",
         y="value",
         color="sensor_id",
-        title="Distance over Time"
+        title="Distance over Time",
     )
     st.plotly_chart(fig, use_container_width=True)

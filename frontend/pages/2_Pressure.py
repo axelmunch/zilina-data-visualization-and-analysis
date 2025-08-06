@@ -1,5 +1,5 @@
-import streamlit as st
 import plotly.express as px
+import streamlit as st
 from utils import load_data
 
 st.set_page_config(layout="wide")
@@ -17,7 +17,6 @@ else:
         x="timestamp",
         y="value",
         color="sensor_id",
-        title="Pressure over Time"
+        title="Pressure over Time",
     )
     st.plotly_chart(fig, use_container_width=True)
-    
