@@ -15,7 +15,7 @@ else:
     st.sidebar.markdown("### Smoothing Options")
     apply_smoothing = st.sidebar.checkbox("Apply smoothing (rolling mean)", value=True)
     resample_interval = st.sidebar.selectbox(
-        "Resample interval", ["1S", "5S", "10S", "30S"], index=2
+        "Resample interval", ["1s", "5s", "10s", "30s"], index=2
     )
 
     # Garder uniquement les colonnes utiles pour la moyenne
