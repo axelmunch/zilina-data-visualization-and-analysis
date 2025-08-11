@@ -58,3 +58,28 @@ def load_data(hours=24) -> pd.DataFrame:
     df = df.sort_values("timestamp")
     client.close()
     return df
+
+
+@st.cache_data(ttl=30)
+def get_sensors(filter_measurements: list[str] = []) -> list[str]:
+    # TODO
+    # Return all on empty list
+    return []
+
+
+@st.cache_data(ttl=30)
+def get_measurements(filter_sensors: list[str] = []) -> list[str]:
+    # TODO
+    # Return all on empty list
+    return []
+
+
+@st.cache_data(ttl=30)
+def get_data(
+    sensors: list[str],
+    measurements: list[str],
+    start_time: dt.datetime,
+    end_time: dt.datetime,
+) -> pd.DataFrame:
+    # TODO
+    return pd.DataFrame()
