@@ -3,5 +3,5 @@
 ## Frontend
 
 ```sh
-streamlit run frontend/main.py
+streamlit run frontend/streamlit_dashboard.py
 ```
