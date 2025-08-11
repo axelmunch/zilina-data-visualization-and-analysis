@@ -82,4 +82,6 @@ def get_data(
     end_time: dt.datetime,
 ) -> pd.DataFrame:
     # TODO
+    # Return data from all sensors if sensors is empty
+    # Return all data from the selected sensors if measurements is empty
     return pd.DataFrame()
