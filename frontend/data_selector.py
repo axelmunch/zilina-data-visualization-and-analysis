@@ -2,7 +2,7 @@ import streamlit as st
 from utils import get_data, get_measurements, get_sensors
 
 
-def data_selector():
+def data_selector(key="data_selector"):
     selected_sensors = []
     selected_measurements = []
 
@@ -15,6 +15,7 @@ def data_selector():
             "Filter sensors by measurement",
         ],
         index=1,
+        key=key + "radio_1",
     )
 
     match selection_type:
@@ -22,25 +23,31 @@ def data_selector():
             selected_sensors, selected_measurements = get_sensors(), get_measurements()
 
             sensors = get_sensors()
-            selected_sensors = st.multiselect("Sensors", sensors, key="1")
+            selected_sensors = st.multiselect(
+                "Sensors", sensors, key=key + "multiselect_1"
+            )
             measurements = get_measurements()
             selected_measurements = st.multiselect(
-                "Measurements", measurements, key="2"
+                "Measurements", measurements, key=key + "multiselect_2"
             )
 
         case "Sensor":
             sensors = get_sensors()
-            selected_sensors = st.multiselect("Sensors", sensors, key="3")
+            selected_sensors = st.multiselect(
+                "Sensors", sensors, key=key + "multiselect_3"
+            )
             measurements = get_measurements(selected_sensors)
             selected_measurements = st.multiselect(
-                "Measurements", measurements, key="4"
+                "Measurements", measurements, key=key + "multiselect_4"
             )
         case "Measurement":
             measurements = get_measurements()
             selected_measurements = st.multiselect(
-                "Measurements", measurements, key="5"
+                "Measurements", measurements, key=key + "multiselect_5"
             )
             sensors = get_sensors(selected_measurements)
-            selected_sensors = st.multiselect("Sensors", sensors, key="6")
+            selected_sensors = st.multiselect(
+                "Sensors", sensors, key=key + "multiselect_6"
+            )
 
     return selected_sensors, selected_measurements
