@@ -2,7 +2,13 @@ import streamlit as st
 from utils import get_data, get_measurements, get_sensors
 
 
-def data_selector(key="data_selector"):
+def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
+    """
+    Component for selecting sensors and measurements to visualize data.
+    Returns:
+        tuple: Selected sensors and measurements.
+    """
+
     selected_sensors = []
     selected_measurements = []
 
