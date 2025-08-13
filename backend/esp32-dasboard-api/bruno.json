@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "esp32-dasboard-api",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
