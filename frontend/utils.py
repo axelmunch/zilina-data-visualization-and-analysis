@@ -1,14 +1,15 @@
 import datetime as dt
+
+# (Optionnel) éviter les warnings pandas/flux "MissingPivotFunction"
+import warnings
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import streamlit as st
 from influxdb_client import InfluxDBClient
-
-# (Optionnel) éviter les warnings pandas/flux "MissingPivotFunction"
-import warnings
 from influxdb_client.client.warnings import MissingPivotFunction
+
 warnings.simplefilter("ignore", MissingPivotFunction)
 
 CSV_PATH = Path("data/sensor_data.csv")
@@ -22,15 +23,18 @@ INFLUX_BUCKET = "sensor_data"
 def _normalize_list(x):
     return [str(v) for v in (x or []) if v is not None]
 
+
 def _or_eq(column: str, values: list[str]) -> str:
-    esc = [str(v).replace('"', r'\"') for v in values]
+    esc = [str(v).replace('"', r"\"") for v in values]
     return " or ".join([f'r.{column} == "{v}"' for v in esc])
+
 
 def _time_clause_from_bounds(start: dt.datetime, end: dt.datetime) -> str:
     def to_rfc3339(t: dt.datetime) -> str:
         if t.tzinfo is None:
             t = t.replace(tzinfo=dt.timezone.utc)
         return t.isoformat()
+
     return f'range(start: time(v: "{to_rfc3339(start)}"), stop: time(v: "{to_rfc3339(end)}"))'
 
 
@@ -56,7 +60,12 @@ schema.fieldKeys(bucket: "{INFLUX_BUCKET}")
                 return sorted(df[col].dropna().astype(str).unique().tolist())
         # fallback: toutes les colonnes textuelles
         return sorted(
-            df.select_dtypes(include=["object"]).stack().dropna().astype(str).unique().tolist()
+            df.select_dtypes(include=["object"])
+            .stack()
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
         )
     finally:
         client.close()
@@ -85,7 +94,16 @@ def load_data(hours=24) -> pd.DataFrame:
 
     if not isinstance(df, pd.DataFrame) or df.empty:
         client.close()
-        return pd.DataFrame(columns=["timestamp", "sensor_id", "sensor", "_measurement", "sensor_type", "value"])
+        return pd.DataFrame(
+            columns=[
+                "timestamp",
+                "sensor_id",
+                "sensor",
+                "_measurement",
+                "sensor_type",
+                "value",
+            ]
+        )
 
     df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
@@ -94,13 +112,32 @@ def load_data(hours=24) -> pd.DataFrame:
         df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
 
     # Colonnes valeurs détectées dynamiquement (numériques, non-méta)
-    meta_cols = {"result", "table", "_start", "_stop", "timestamp", "_measurement", "sensor", "sensor_id", "device"}
+    meta_cols = {
+        "result",
+        "table",
+        "_start",
+        "_stop",
+        "timestamp",
+        "_measurement",
+        "sensor",
+        "sensor_id",
+        "device",
+    }
     cols = [c for c in df.columns if c not in meta_cols and not c.startswith("_")]
     value_columns = [c for c in cols if pd.api.types.is_numeric_dtype(df[c])]
 
     if not value_columns:
         client.close()
-        return pd.DataFrame(columns=["timestamp", "sensor_id", "sensor", "_measurement", "sensor_type", "value"])
+        return pd.DataFrame(
+            columns=[
+                "timestamp",
+                "sensor_id",
+                "sensor",
+                "_measurement",
+                "sensor_type",
+                "value",
+            ]
+        )
 
     df = df.melt(
         id_vars=["timestamp", "sensor_id", "sensor", "_measurement"],
@@ -123,7 +160,11 @@ def get_sensors(filter_measurements: list[str] = []) -> list[str]:
     filter_measurements = _normalize_list(filter_measurements)
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
     try:
-        meas_filter = f'  |> filter(fn: (r) => {_or_eq("_measurement", filter_measurements)})\n' if filter_measurements else ""
+        meas_filter = (
+            f"  |> filter(fn: (r) => {_or_eq('_measurement', filter_measurements)})\n"
+            if filter_measurements
+            else ""
+        )
         flux = f'''
 from(bucket: "{INFLUX_BUCKET}")
   |> range(start: -24h)
@@ -240,7 +281,16 @@ from(bucket: "{INFLUX_BUCKET}")
             df = pd.concat(df, ignore_index=True)
 
         if not isinstance(df, pd.DataFrame) or df.empty:
-            return pd.DataFrame(columns=["timestamp", "sensor_id", "sensor", "_measurement", "sensor_type", "value"])
+            return pd.DataFrame(
+                columns=[
+                    "timestamp",
+                    "sensor_id",
+                    "sensor",
+                    "_measurement",
+                    "sensor_type",
+                    "value",
+                ]
+            )
 
         # Harmonisation
         df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
@@ -249,12 +299,33 @@ from(bucket: "{INFLUX_BUCKET}")
             df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
 
         # Détection dynamique des colonnes de valeur (numériques, non-méta)
-        meta_cols = {"result", "table", "_start", "_stop", "timestamp", "_measurement", "sensor", "sensor_id", "device"}
-        candidates = [c for c in df.columns if c not in meta_cols and not c.startswith("_")]
+        meta_cols = {
+            "result",
+            "table",
+            "_start",
+            "_stop",
+            "timestamp",
+            "_measurement",
+            "sensor",
+            "sensor_id",
+            "device",
+        }
+        candidates = [
+            c for c in df.columns if c not in meta_cols and not c.startswith("_")
+        ]
         value_cols = [c for c in candidates if pd.api.types.is_numeric_dtype(df[c])]
 
         if not value_cols:
-            return pd.DataFrame(columns=["timestamp", "sensor_id", "sensor", "_measurement", "sensor_type", "value"])
+            return pd.DataFrame(
+                columns=[
+                    "timestamp",
+                    "sensor_id",
+                    "sensor",
+                    "_measurement",
+                    "sensor_type",
+                    "value",
+                ]
+            )
 
         df_long = df.melt(
             id_vars=["timestamp", "sensor_id", "sensor", "_measurement"],
