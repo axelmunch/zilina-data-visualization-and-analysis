@@ -1,4 +1,4 @@
-from typing import Any, List, TypedDict
+from typing import Any, TypedDict
 
 
 class Measurement(TypedDict):
@@ -7,19 +7,19 @@ class Measurement(TypedDict):
 
 
 class DataPoint(TypedDict):
-    measurements: List[Measurement]
+    measurements: list[Measurement]
     timestamp: Any
 
 
 class Sensor(TypedDict):
     sensor_id: str
     sensor_type: str
-    data: List[DataPoint]
+    data: list[DataPoint]
 
 
 class Device(TypedDict):
     device: str
-    sensors: List[Sensor]
+    sensors: list[Sensor]
 
 
 Data = Device
