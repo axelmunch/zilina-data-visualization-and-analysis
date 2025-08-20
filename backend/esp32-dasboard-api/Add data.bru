@@ -1,0 +1,36 @@
+meta {
+  name: Add data
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  [
+    {
+      "device": "device_name",
+      "sensors": [
+        {
+          "sensor_id": "sensor_id",
+          "sensor_type": "sensor_type",
+          "data": [
+            {
+              "measurements": [{ "name": "name", "value": 0 }],
+              "timestamp": "2025-08-01T09:00:00+0000"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+  
+}
+
+settings {
+  encodeUrl: true
+}

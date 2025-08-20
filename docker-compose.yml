@@ -29,6 +29,17 @@ services:
       - influxdb
     restart: unless-stopped
 
+  api:
+    image: esp32-api:1.0
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    container_name: esp32-api
+    ports:
+      - 5000:5000
+    depends_on:
+      - influxdb
+    restart: unless-stopped
 
   data_gen:
     build: ./data_gen

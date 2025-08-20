@@ -5,3 +5,9 @@
 ```sh
 streamlit run frontend/streamlit_dashboard.py
 ```
+
+## Backend
+
+```sh
+flask --app backend/api run
+```
