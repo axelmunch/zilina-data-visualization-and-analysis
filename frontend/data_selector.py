@@ -39,11 +39,9 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
                     "Sensors", sensors, key=key + "multiselect_1"
                 )
                 measurements = get_measurements()
-                selected_measurements = [
-                    st.selectbox(
-                        "Measurements", measurements, key=key + "multiselect_2"
-                    )
-                ]
+                selected_measurements = st.multiselect(
+                    "Measurements", measurements, key=key + "multiselect_2"
+                )
 
             case "Sensor":
                 sensors = get_sensors()
@@ -51,21 +49,20 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
                     "Sensors", sensors, key=key + "multiselect_3"
                 )
                 measurements = get_measurements(selected_sensors)
-                selected_measurements = [
-                    st.selectbox(
-                        "Measurements", measurements, key=key + "multiselect_4"
-                    )
-                ]
+                selected_measurements = st.multiselect(
+                    "Measurements", measurements, key=key + "multiselect_4"
+                )
+
             case "Measurement":
                 measurements = get_measurements()
-                selected_measurements = [
-                    st.selectbox(
-                        "Measurements", measurements, key=key + "multiselect_5"
-                    )
-                ]
+                selected_measurements = st.multiselect(
+                    "Measurements", measurements, key=key + "multiselect_5"
+                )
+
                 sensors = get_sensors(selected_measurements)
                 selected_sensors = st.multiselect(
                     "Sensors", sensors, key=key + "multiselect_6"
                 )
 
+    print(selected_sensors, selected_measurements)
     return selected_sensors, selected_measurements
