@@ -1,10 +1,9 @@
 import datetime as dt
 
-# (Optionnel) éviter les warnings pandas/flux "MissingPivotFunction"
+# avoid warnings pandas/flux "MissingPivotFunction"
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 from influxdb_client import InfluxDBClient
@@ -13,7 +12,7 @@ from influxdb_client.client.warnings import MissingPivotFunction
 warnings.simplefilter("ignore", MissingPivotFunction)
 
 CSV_PATH = Path("data/sensor_data.csv")
-INFLUX_URL = "http://influxdb:8086"  # en Docker Compose -> "http://influxdb:8086"
+INFLUX_URL = "http://influxdb:8086"  # Docker Compose -> "http://influxdb:8086"
 INFLUX_TOKEN = "klQGaUK53OtG1Bzk1Ezon9N-_7fM9TSSMHOsivQoFthzGgH_53E1GhOiFoCNq8Y92y64BKx0gtML12N43fEyoA=="
 INFLUX_ORG = "my-org"
 INFLUX_BUCKET = "sensor_data"
@@ -40,8 +39,7 @@ def _time_clause_from_bounds(start: dt.datetime, end: dt.datetime) -> str:
 
 def get_columns() -> list[str]:
     """
-    Liste dynamique de tous les 'field keys' du bucket (aucune liste en dur).
-    Utilisé par load_data ; get_data fait aussi une détection sur dtypes côté pandas.
+    List of 'field keys' from bucket
     """
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
     try:
@@ -54,11 +52,11 @@ schema.fieldKeys(bucket: "{INFLUX_BUCKET}")
             df = pd.concat(df, ignore_index=True)
         if not isinstance(df, pd.DataFrame) or df.empty:
             return []
-        # schema.fieldKeys renvoie généralement le nom dans _value
+        # schema.fieldKeys returns name in _value
         for col in ["_value", "fieldKey", "field"]:
             if col in df.columns:
                 return sorted(df[col].dropna().astype(str).unique().tolist())
-        # fallback: toutes les colonnes textuelles
+        # fallback: every columns
         return sorted(
             df.select_dtypes(include=["object"])
             .stack()
@@ -73,10 +71,6 @@ schema.fieldKeys(bucket: "{INFLUX_BUCKET}")
 
 @st.cache_data(ttl=30)
 def load_data(hours=24) -> pd.DataFrame:
-    """
-    Version dynamique : on n'écrit PLUS la liste de colonnes dans le Flux.
-    On détecte ensuite côté pandas les colonnes valeurs qui existent.
-    """
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
     query_api = client.query_api()
 
@@ -107,11 +101,11 @@ def load_data(hours=24) -> pd.DataFrame:
 
     df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
-    # si device absent sur certains points, retomber sur 'sensor'
+    # if no devide, set 'sensor'
     if "sensor_id" in df.columns and "sensor" in df.columns:
         df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
 
-    # Colonnes valeurs détectées dynamiquement (numériques, non-méta)
+    # Dynamic columns
     meta_cols = {
         "result",
         "table",
@@ -153,9 +147,8 @@ def load_data(hours=24) -> pd.DataFrame:
 @st.cache_data(ttl=30)
 def get_sensors(filter_measurements: list[str] = []) -> list[str]:
     """
-    Renvoie la liste des capteurs (union des tags 'sensor' et 'device').
-    Si filter_measurements est fourni, on ne garde que ceux qui ont des points
-    dans au moins un des measurements donnés (fenêtre glissante = 24h).
+    Returns list of sensors and devices
+    If filter_measurements, filter by measurements
     """
     filter_measurements = _normalize_list(filter_measurements)
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -188,10 +181,8 @@ from(bucket: "{INFLUX_BUCKET}")
 @st.cache_data(ttl=30)
 def get_measurements(filter_sensors: list[str] = []) -> list[str]:
     """
-    Renvoie la liste des _measurement distincts.
-    - Si aucun filtre capteurs -> utilise schema.measurements (plus fiable/rapide).
-    - Sinon -> filtre sur tags sensor OU device puis distinct(_measurement).
-    Fenêtre glissante de 24h pour le cas filtré.
+    Returns list of measurements
+    If filter_sensors, filter by device or sensor
     """
     filter_sensors = _normalize_list(filter_sensors)
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -242,16 +233,16 @@ def get_data(
     end_time: dt.datetime,
 ) -> pd.DataFrame:
     """
-    Récupère les données selon:
-      - sensors: liste de capteurs (tags 'sensor' OU 'device'); si vide -> tous
-      - measurements: liste de _measurement ; si vide -> tous
-      - start_time / end_time: bornes absolues (naïf = UTC)
-    Retourne un DataFrame *long* (timestamp, sensor_id, sensor, _measurement, sensor_type, value).
+    Get data by:
+      - sensors: filter by sensor or device, if empty: all of them
+      - measurements: filter by measurement, if empty: all of them
+      - start_time / end_time: UTC time default
+    Returns DataFrame (timestamp, sensor_id, sensor, _measurement, sensor_type, value)
     """
     sensors = _normalize_list(sensors)
     measurements = _normalize_list(measurements)
 
-    # Filtres Flux
+    # Flux filters
     sensors_filter = None
     if sensors:
         f1 = _or_eq("sensor", sensors)
@@ -292,13 +283,13 @@ from(bucket: "{INFLUX_BUCKET}")
                 ]
             )
 
-        # Harmonisation
+        # Harmonization
         df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
         if "sensor_id" in df.columns and "sensor" in df.columns:
             df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
 
-        # Détection dynamique des colonnes de valeur (numériques, non-méta)
+        # Dynamic columns
         meta_cols = {
             "result",
             "table",

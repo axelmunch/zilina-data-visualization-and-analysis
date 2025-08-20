@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import get_data, get_measurements, get_sensors
+from utils import get_measurements, get_sensors
 
 
 def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
@@ -20,7 +20,7 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
             ["Any", "Sensor", "Measurement"],
             captions=[
                 "Select any values",
-                "Filter measurements by sensor",
+                "Filter measurements by sensor/device",
                 "Filter sensors by measurement",
             ],
             index=1,
