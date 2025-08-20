@@ -12,14 +12,12 @@ st.title("ESP32 Sensor Dashboard")
 with st.container(border=True):
     selected_sensors, selected_measurements = data_selector()
 
-    print(selected_sensors, selected_measurements)
     data = get_data(
         sensors=selected_sensors,
         measurements=selected_measurements,
-        start_time=dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1000),
+        start_time=dt.datetime.fromtimestamp(0),
         end_time=dt.datetime.now(dt.timezone.utc),
     )
-    print(data)
 
     fig = px.line(
         data,
