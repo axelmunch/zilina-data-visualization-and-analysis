@@ -167,7 +167,7 @@ def get_sensors(filter_measurements: list[str] = []) -> list[str]:
         )
         flux = f'''
 from(bucket: "{INFLUX_BUCKET}")
-  |> range(start: -24h)
+  |> range(start: 0)
 {meas_filter}  |> keep(columns: ["sensor", "device"])
 '''
         df = client.query_api().query_data_frame(flux)
@@ -215,7 +215,7 @@ schema.measurements(bucket: "{INFLUX_BUCKET}")
         f2 = _or_eq("device", filter_sensors)
         flux = f'''
 from(bucket: "{INFLUX_BUCKET}")
-  |> range(start: -24h)
+  |> range(start: 0)
   |> filter(fn: (r) => ({f1}) or ({f2}))
   |> keep(columns: ["_measurement"])
   |> group()
