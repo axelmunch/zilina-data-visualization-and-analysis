@@ -13,7 +13,7 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
     selected_measurements = []
 
     with st.container(border=True, key=key + "container_1"):
-        st.text("Select sensors and measurements to visualize data.")
+        st.subheader("Select sensors and measurements to visualize data.")
 
         selection_type = st.radio(
             "Data filter type",

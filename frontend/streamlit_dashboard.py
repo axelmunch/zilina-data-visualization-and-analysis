@@ -2,6 +2,7 @@ import datetime as dt
 
 import plotly.express as px
 import streamlit as st
+from data_analysis import data_analysis
 from data_selector import data_selector
 from utils import get_data
 
@@ -37,3 +38,5 @@ with st.container(border=True):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    data_analysis(data)
