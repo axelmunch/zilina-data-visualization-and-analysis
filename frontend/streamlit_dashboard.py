@@ -1,30 +1,41 @@
+import datetime as dt
+
 import plotly.express as px
 import streamlit as st
 from data_selector import data_selector
-from utils import load_data
+from utils import get_data
 
 st.set_page_config(page_title="ESP32 Multi-Dashboard", page_icon="📊", layout="wide")
 
 st.title("ESP32 Sensor Dashboard")
 
 with st.container(border=True):
-    _, selected_measurements = data_selector()
+    selected_sensors, selected_measurements = data_selector()
 
-    if len(selected_measurements) > 0:
-        df = load_data()
+    print(selected_sensors, selected_measurements)
+    data = get_data(
+        sensors=selected_sensors,
+        measurements=selected_measurements,
+        start_time=dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1000),
+        end_time=dt.datetime.now(dt.timezone.utc),
+    )
+    print(data)
 
-        df_temp = df[df["sensor_type"].str.contains(selected_measurements[0])]
+    fig = px.line(
+        data,
+        x="timestamp",
+        y="value",
+        color="sensor_type",
+        line_group="sensor",
+        hover_data=[
+            "timestamp",
+            "sensor_id",
+            "sensor",
+            "_measurement",
+            "sensor_type",
+            "value",
+        ],
+        markers=True,
+    )
 
-        if df_temp.empty:
-            st.warning("No data.")
-        else:
-            st.plotly_chart(
-                px.line(
-                    df_temp,
-                    x="timestamp",
-                    y="value",
-                    color="sensor_id",
-                    title="Variation",
-                ),
-                use_container_width=True,
-            )
+    st.plotly_chart(fig, use_container_width=True)

@@ -64,5 +64,4 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
                     "Sensors", sensors, key=key + "multiselect_6"
                 )
 
-    print(selected_sensors, selected_measurements)
     return selected_sensors, selected_measurements
