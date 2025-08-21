@@ -11,6 +11,20 @@ st.set_page_config(page_title="ESP32 Multi-Dashboard", page_icon="📊", layout=
 st.title("ESP32 Sensor Dashboard")
 
 with st.container(border=True):
+    st.sidebar.subheader("Settings")
+
+    data_source = st.sidebar.radio(
+        "Data source",
+        ["Database", "CSV"],
+        captions=[
+            "InfluxDB",
+            "CSV import",
+        ],
+    )
+
+    if data_source == "CSV":
+        csv_content = st.sidebar.text_area("CSV data")
+
     selected_sensors, selected_measurements = data_selector()
 
     data = get_data(
