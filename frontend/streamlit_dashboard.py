@@ -25,6 +25,17 @@ with st.container(border=True):
     if data_source == "CSV":
         csv_content = st.sidebar.text_area("CSV data")
 
+    st.sidebar.divider()
+
+    filters_enabled = st.sidebar.checkbox("Enable filters", value=True)
+    if filters_enabled:
+        st.sidebar.text("Rolling mean")
+        st.sidebar.text("Rolling mean window")
+        st.sidebar.divider()
+        st.sidebar.text("Low-pass filter")
+        st.sidebar.divider()
+        st.sidebar.text("High-pass filter")
+
     selected_sensors, selected_measurements = data_selector()
 
     data = get_data(
