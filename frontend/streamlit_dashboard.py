@@ -55,7 +55,7 @@ with st.container(border=True):
             "timestamp",
             "sensor_id",
             "sensor",
-            "_measurement",
+            "measurement",
             "sensor_type",
             "value",
         ],

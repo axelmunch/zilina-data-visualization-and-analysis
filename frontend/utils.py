@@ -284,7 +284,13 @@ from(bucket: "{INFLUX_BUCKET}")
             )
 
         # Harmonization
-        df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
+        df = df.rename(
+            columns={
+                "_time": "timestamp",
+                "device": "sensor_id",
+                "_measurement": "measurement",
+            }
+        )
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
         if "sensor_id" in df.columns and "sensor" in df.columns:
             df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
@@ -296,7 +302,7 @@ from(bucket: "{INFLUX_BUCKET}")
             "_start",
             "_stop",
             "timestamp",
-            "_measurement",
+            "measurement",
             "sensor",
             "sensor_id",
             "device",
@@ -312,14 +318,14 @@ from(bucket: "{INFLUX_BUCKET}")
                     "timestamp",
                     "sensor_id",
                     "sensor",
-                    "_measurement",
+                    "measurement",
                     "sensor_type",
                     "value",
                 ]
             )
 
         df_long = df.melt(
-            id_vars=["timestamp", "sensor_id", "sensor", "_measurement"],
+            id_vars=["timestamp", "sensor_id", "sensor", "measurement"],
             value_vars=value_cols,
             var_name="sensor_type",
             value_name="value",
