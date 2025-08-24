@@ -1,5 +1,6 @@
 import datetime as dt
 
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 from data_analysis import data_analysis
@@ -13,6 +14,8 @@ st.title("ESP32 Sensor Dashboard")
 with st.container(border=True):
     st.sidebar.subheader("Settings")
 
+    data = None
+
     data_source = st.sidebar.radio(
         "Data source",
         ["Database", "CSV"],
@@ -23,7 +26,14 @@ with st.container(border=True):
     )
 
     if data_source == "CSV":
-        csv_content = st.sidebar.text_area("CSV data")
+        uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"])
+        if uploaded_file is not None:
+            data = pd.read_csv(uploaded_file)
+            st.sidebar.success("File uploaded successfully")
+            st.badge("Using imported data", icon=":material/check:", color="blue")
+        else:
+            st.sidebar.warning("Please upload a CSV file")
+            st.stop()
 
     st.sidebar.divider()
 
@@ -36,9 +46,10 @@ with st.container(border=True):
         st.sidebar.divider()
         st.sidebar.text("High-pass filter")
 
-    selected_sensors, selected_measurements = data_selector()
+    selected_sensors, selected_measurements = data_selector(data=data)
 
-    data = get_data(
+    selected_data = get_data(
+        data=data,
         sensors=selected_sensors,
         measurements=selected_measurements,
         start_time=dt.datetime.fromtimestamp(0),
@@ -46,7 +57,7 @@ with st.container(border=True):
     )
 
     fig = px.line(
-        data,
+        selected_data,
         x="timestamp",
         y="value",
         color="sensor_type",
@@ -55,7 +66,7 @@ with st.container(border=True):
             "timestamp",
             "sensor_id",
             "sensor",
-            "_measurement",
+            "measurement",
             "sensor_type",
             "value",
         ],
@@ -64,4 +75,4 @@ with st.container(border=True):
 
     st.plotly_chart(fig, use_container_width=True)
 
-    data_analysis(data)
+    data_analysis(selected_data)

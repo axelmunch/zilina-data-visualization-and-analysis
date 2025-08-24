@@ -145,11 +145,25 @@ def load_data(hours=24) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=30)
-def get_sensors(filter_measurements: list[str] = []) -> list[str]:
+def get_sensors(filter_measurements: list[str] = [], data=None) -> list[str]:
     """
     Returns list of sensors and devices
     If filter_measurements, filter by measurements
+    data: CSV data (DataFrame) to filter, if None, query InfluxDB
     """
+    if data is not None:
+        if len(filter_measurements) == 0:
+            sensors = pd.concat([data["sensor"], data["sensor_id"]])
+            return sensors.dropna().astype(str).unique().tolist()
+
+        sensors = pd.concat(
+            [
+                data[data["measurement"].isin(filter_measurements)]["sensor"],
+                data[data["measurement"].isin(filter_measurements)]["sensor_id"],
+            ]
+        )
+        return sensors.dropna().astype(str).unique().tolist()
+
     filter_measurements = _normalize_list(filter_measurements)
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
     try:
@@ -179,11 +193,28 @@ from(bucket: "{INFLUX_BUCKET}")
 
 
 @st.cache_data(ttl=30)
-def get_measurements(filter_sensors: list[str] = []) -> list[str]:
+def get_measurements(filter_sensors: list[str] = [], data=None) -> list[str]:
     """
     Returns list of measurements
     If filter_sensors, filter by device or sensor
+    data: CSV data (DataFrame) to filter, if None, query InfluxDB
     """
+
+    if data is not None:
+        if len(filter_sensors) == 0:
+            return data["measurement"].dropna().astype(str).unique().tolist()
+
+        return (
+            data[
+                data["sensor"].isin(filter_sensors)
+                | data["sensor_id"].isin(filter_sensors)
+            ]["measurement"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
     filter_sensors = _normalize_list(filter_sensors)
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
     try:
@@ -231,16 +262,29 @@ def get_data(
     measurements: list[str],
     start_time: dt.datetime,
     end_time: dt.datetime,
+    data=None,
 ) -> pd.DataFrame:
     """
     Get data by:
       - sensors: filter by sensor or device, if empty: all of them
       - measurements: filter by measurement, if empty: all of them
       - start_time / end_time: UTC time default
+      - data: CSV data (DataFrame) to filter, if None, query InfluxDB
     Returns DataFrame (timestamp, sensor_id, sensor, _measurement, sensor_type, value)
     """
     sensors = _normalize_list(sensors)
     measurements = _normalize_list(measurements)
+
+    if data is not None:
+        df = data.copy()
+        if len(sensors) == 0 and len(measurements) == 0:
+            return df
+
+        if sensors:
+            df = df[df["sensor"].isin(sensors) | df["sensor_id"].isin(sensors)]
+        if measurements:
+            df = df[df["measurement"].isin(measurements)]
+        return df.sort_values("timestamp").reset_index(drop=True)
 
     # Flux filters
     sensors_filter = None
@@ -284,7 +328,13 @@ from(bucket: "{INFLUX_BUCKET}")
             )
 
         # Harmonization
-        df = df.rename(columns={"_time": "timestamp", "device": "sensor_id"})
+        df = df.rename(
+            columns={
+                "_time": "timestamp",
+                "device": "sensor_id",
+                "_measurement": "measurement",
+            }
+        )
         df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(None)
         if "sensor_id" in df.columns and "sensor" in df.columns:
             df["sensor_id"] = df["sensor_id"].fillna(df["sensor"])
@@ -296,7 +346,7 @@ from(bucket: "{INFLUX_BUCKET}")
             "_start",
             "_stop",
             "timestamp",
-            "_measurement",
+            "measurement",
             "sensor",
             "sensor_id",
             "device",
@@ -312,14 +362,14 @@ from(bucket: "{INFLUX_BUCKET}")
                     "timestamp",
                     "sensor_id",
                     "sensor",
-                    "_measurement",
+                    "measurement",
                     "sensor_type",
                     "value",
                 ]
             )
 
         df_long = df.melt(
-            id_vars=["timestamp", "sensor_id", "sensor", "_measurement"],
+            id_vars=["timestamp", "sensor_id", "sensor", "measurement"],
             value_vars=value_cols,
             var_name="sensor_type",
             value_name="value",

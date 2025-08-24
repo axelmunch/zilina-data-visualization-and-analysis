@@ -2,7 +2,7 @@ import streamlit as st
 from utils import get_measurements, get_sensors
 
 
-def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
+def data_selector(data=None, key="data_selector") -> tuple[list[str], list[str]]:
     """
     Component for selecting sensors and measurements to visualize data.
     Returns:
@@ -30,36 +30,36 @@ def data_selector(key="data_selector") -> tuple[list[str], list[str]]:
         match selection_type:
             case "Any":
                 selected_sensors, selected_measurements = (
-                    get_sensors(),
-                    get_measurements(),
+                    get_sensors(data=data),
+                    get_measurements(data=data),
                 )
 
-                sensors = get_sensors()
+                sensors = get_sensors(data=data)
                 selected_sensors = st.multiselect(
                     "Sensors", sensors, key=key + "multiselect_1"
                 )
-                measurements = get_measurements()
+                measurements = get_measurements(data=data)
                 selected_measurements = st.multiselect(
                     "Measurements", measurements, key=key + "multiselect_2"
                 )
 
             case "Sensor":
-                sensors = get_sensors()
+                sensors = get_sensors(data=data)
                 selected_sensors = st.multiselect(
                     "Sensors", sensors, key=key + "multiselect_3"
                 )
-                measurements = get_measurements(selected_sensors)
+                measurements = get_measurements(selected_sensors, data=data)
                 selected_measurements = st.multiselect(
                     "Measurements", measurements, key=key + "multiselect_4"
                 )
 
             case "Measurement":
-                measurements = get_measurements()
+                measurements = get_measurements(data=data)
                 selected_measurements = st.multiselect(
                     "Measurements", measurements, key=key + "multiselect_5"
                 )
 
-                sensors = get_sensors(selected_measurements)
+                sensors = get_sensors(selected_measurements, data=data)
                 selected_sensors = st.multiselect(
                     "Sensors", sensors, key=key + "multiselect_6"
                 )
