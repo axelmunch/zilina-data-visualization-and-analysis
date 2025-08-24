@@ -7,7 +7,7 @@ from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 # ----- InfluxDB Configuration -----
-INFLUX_URL = "http://localhost:8086"  # Use "influxdb" as hostname inside Docker
+INFLUX_URL = "http://influxdb:8086"  # Use "influxdb" as hostname inside Docker
 INFLUX_TOKEN = "klQGaUK53OtG1Bzk1Ezon9N-_7fM9TSSMHOsivQoFthzGgH_53E1GhOiFoCNq8Y92y64BKx0gtML12N43fEyoA=="
 INFLUX_ORG = "my-org"
 INFLUX_BUCKET = "sensor_data"

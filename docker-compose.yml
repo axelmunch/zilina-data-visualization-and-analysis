@@ -13,6 +13,8 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=my-org
       - DOCKER_INFLUXDB_INIT_BUCKET=sensor_data
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=klQGaUK53OtG1Bzk1Ezon9N-_7fM9TSSMHOsivQoFthzGgH_53E1GhOiFoCNq8Y92y64BKx0gtML12N43fEyoA==
+    networks:
+      - data-analysis
     restart: unless-stopped
 
   streamlit:
@@ -27,6 +29,8 @@ services:
       - ./data/query.csv:/app/data/query.csv:ro
     depends_on:
       - influxdb
+    networks:
+      - data-analysis
     restart: unless-stopped
 
   api:
@@ -39,13 +43,13 @@ services:
       - 5000:5000
     depends_on:
       - influxdb
+    networks:
+      - data-analysis
     restart: unless-stopped
 
-  data_gen:
-    build: ./data_gen
-    container_name: data-generator
-    depends_on:
-      - influxdb
+networks:
+  data-analysis:
+    name: data-analysis
 
 volumes:
   influxdb_data:
