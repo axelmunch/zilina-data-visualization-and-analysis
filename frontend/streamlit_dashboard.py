@@ -30,7 +30,7 @@ with st.container(border=True):
         if uploaded_file is not None:
             data = pd.read_csv(uploaded_file)
             st.sidebar.success("File uploaded successfully")
-            st.write(data)
+            st.badge("Using imported data", icon=":material/check:", color="blue")
         else:
             st.sidebar.warning("Please upload a CSV file")
             st.stop()
