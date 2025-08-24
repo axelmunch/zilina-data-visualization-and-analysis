@@ -121,9 +121,9 @@ while True:
 
         # print(data)
 
-        sleep(2)
+        sleep(4)
     except Exception as e:
         print(e)
-        break
+        # break
 
 print("Error. Exiting...")
