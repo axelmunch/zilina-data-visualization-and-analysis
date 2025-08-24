@@ -1,3 +1,9 @@
 [server]
-
 runOnSave = true
+headless = true
+
+[theme]
+base="light"
+primaryColor="#228cdb"
+secondaryBackgroundColor="#f9f8f8"
+textColor="#161925"
