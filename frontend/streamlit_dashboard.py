@@ -1,4 +1,3 @@
-# frontend/streamlit_dashboard.py
 import datetime as dt
 import math
 
@@ -15,6 +14,7 @@ st.title("ESP32 Sensor Dashboard")
 # Optional: SciPy for a true IIR Butterworth (otherwise fallback to rolling mean)
 try:
     from scipy.signal import butter, filtfilt  # type: ignore
+
     HAS_SCIPY = True
 except Exception:
     HAS_SCIPY = False
@@ -32,7 +32,9 @@ def _series_fs_from_timestamps(ts: pd.Series) -> float | None:
     return 1.0 / dt_s if dt_s > 0 else None
 
 
-def _butter_filter_1d(x: pd.Series, fs_hz: float, cutoff_hz: float, order: int, btype: str) -> pd.Series:
+def _butter_filter_1d(
+    x: pd.Series, fs_hz: float, cutoff_hz: float, order: int, btype: str
+) -> pd.Series:
     if not HAS_SCIPY or fs_hz is None or fs_hz <= 0:
         return x
 
@@ -75,16 +77,28 @@ def _apply_global_rolling(df: pd.DataFrame) -> pd.DataFrame:
     center = bool(st.session_state.get("rolling_center", True))
     min_periods = int(st.session_state.get("rolling_min_periods", 1))
 
-    group_cols = [c for c in ["sensor_id", "sensor", "measurement", "sensor_type"] if c in df.columns]
+    group_cols = [
+        c
+        for c in ["sensor_id", "sensor", "measurement", "sensor_type"]
+        if c in df.columns
+    ]
     df = df.sort_values(group_cols + ["timestamp"]).copy()
 
     def _roll(g: pd.DataFrame) -> pd.DataFrame:
         g = g.sort_values("timestamp").copy()
         if "value" in g.columns:
-            g["value"] = g["value"].rolling(window=window, center=center, min_periods=min_periods).mean()
+            g["value"] = (
+                g["value"]
+                .rolling(window=window, center=center, min_periods=min_periods)
+                .mean()
+            )
         return g
 
-    return df.groupby(group_cols, group_keys=False).apply(_roll) if group_cols else _roll(df)
+    return (
+        df.groupby(group_cols, group_keys=False).apply(_roll)
+        if group_cols
+        else _roll(df)
+    )
 
 
 def _apply_lowpass(df: pd.DataFrame) -> pd.DataFrame:
@@ -92,7 +106,11 @@ def _apply_lowpass(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty or not st.session_state.get("lp_enabled", False):
         return df
 
-    group_cols = [c for c in ["sensor_id", "sensor", "measurement", "sensor_type"] if c in df.columns]
+    group_cols = [
+        c
+        for c in ["sensor_id", "sensor", "measurement", "sensor_type"]
+        if c in df.columns
+    ]
     df = df.sort_values(group_cols + ["timestamp"]).copy()
 
     if HAS_SCIPY:
@@ -107,7 +125,11 @@ def _apply_lowpass(df: pd.DataFrame) -> pd.DataFrame:
                 g["value"] = _butter_filter_1d(g["value"], fs, cutoff_hz, order, "low")
             return g
 
-        return df.groupby(group_cols, group_keys=False).apply(_lp_butter) if group_cols else _lp_butter(df)
+        return (
+            df.groupby(group_cols, group_keys=False).apply(_lp_butter)
+            if group_cols
+            else _lp_butter(df)
+        )
 
     # Fallback: rolling mean as low-pass
     lp_window = int(st.session_state.get("lp_window_points", 25))
@@ -117,10 +139,18 @@ def _apply_lowpass(df: pd.DataFrame) -> pd.DataFrame:
     def _lp_roll(g: pd.DataFrame) -> pd.DataFrame:
         g = g.sort_values("timestamp").copy()
         if "value" in g.columns:
-            g["value"] = g["value"].rolling(window=lp_window, center=center, min_periods=minp).mean()
+            g["value"] = (
+                g["value"]
+                .rolling(window=lp_window, center=center, min_periods=minp)
+                .mean()
+            )
         return g
 
-    return df.groupby(group_cols, group_keys=False).apply(_lp_roll) if group_cols else _lp_roll(df)
+    return (
+        df.groupby(group_cols, group_keys=False).apply(_lp_roll)
+        if group_cols
+        else _lp_roll(df)
+    )
 
 
 def _apply_highpass(df: pd.DataFrame) -> pd.DataFrame:
@@ -128,7 +158,11 @@ def _apply_highpass(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty or not st.session_state.get("hp_enabled", False):
         return df
 
-    group_cols = [c for c in ["sensor_id", "sensor", "measurement", "sensor_type"] if c in df.columns]
+    group_cols = [
+        c
+        for c in ["sensor_id", "sensor", "measurement", "sensor_type"]
+        if c in df.columns
+    ]
     df = df.sort_values(group_cols + ["timestamp"]).copy()
 
     if HAS_SCIPY:
@@ -143,7 +177,11 @@ def _apply_highpass(df: pd.DataFrame) -> pd.DataFrame:
                 g["value"] = _butter_filter_1d(g["value"], fs, cutoff_hz, order, "high")
             return g
 
-        return df.groupby(group_cols, group_keys=False).apply(_hp_butter) if group_cols else _hp_butter(df)
+        return (
+            df.groupby(group_cols, group_keys=False).apply(_hp_butter)
+            if group_cols
+            else _hp_butter(df)
+        )
 
     # Fallback: x - rolling_mean(x)
     hp_window = int(st.session_state.get("hp_window_points", 25))
@@ -153,11 +191,19 @@ def _apply_highpass(df: pd.DataFrame) -> pd.DataFrame:
     def _hp_roll(g: pd.DataFrame) -> pd.DataFrame:
         g = g.sort_values("timestamp").copy()
         if "value" in g.columns:
-            baseline = g["value"].rolling(window=hp_window, center=center, min_periods=minp).mean()
+            baseline = (
+                g["value"]
+                .rolling(window=hp_window, center=center, min_periods=minp)
+                .mean()
+            )
             g["value"] = g["value"] - baseline
         return g
 
-    return df.groupby(group_cols, group_keys=False).apply(_hp_roll) if group_cols else _hp_roll(df)
+    return (
+        df.groupby(group_cols, group_keys=False).apply(_hp_roll)
+        if group_cols
+        else _hp_roll(df)
+    )
 
 
 with st.container(border=True):
@@ -173,7 +219,9 @@ with st.container(border=True):
     )
 
     if data_source == "CSV":
-        uploaded_file = st.sidebar.file_uploader("Upload CSV file", type=["csv"], key="csv_uploader")
+        uploaded_file = st.sidebar.file_uploader(
+            "Upload CSV file", type=["csv"], key="csv_uploader"
+        )
         if uploaded_file is not None:
             data = pd.read_csv(uploaded_file, parse_dates=["timestamp"])
             st.sidebar.success("File uploaded successfully")
@@ -212,31 +260,82 @@ with st.container(border=True):
 
         # Rolling mean (always available)
         st.checkbox("Enable Rolling mean", key="rolling_enabled")
-        st.slider("Rolling window (points)", min_value=2, max_value=500, step=1, key="rolling_window")
+        st.slider(
+            "Rolling window (points)",
+            min_value=2,
+            max_value=500,
+            step=1,
+            key="rolling_window",
+        )
         st.checkbox("Centered window (rolling)", key="rolling_center")
         current_window = int(st.session_state.get("rolling_window", 10))
-        default_minp = min(int(st.session_state.get("rolling_min_periods", 1)), current_window)
-        st.slider("min_periods (rolling)", min_value=1, max_value=current_window, value=default_minp, step=1, key="rolling_min_periods")
+        default_minp = min(
+            int(st.session_state.get("rolling_min_periods", 1)), current_window
+        )
+        st.slider(
+            "min_periods (rolling)",
+            min_value=1,
+            max_value=current_window,
+            value=default_minp,
+            step=1,
+            key="rolling_min_periods",
+        )
 
         st.divider()
 
         # Low-pass
         st.checkbox("Enable Low-pass", key="lp_enabled")
         if HAS_SCIPY:
-            st.number_input("Low-pass cutoff (period in seconds)", min_value=0.01, step=0.1, key="lp_cutoff_seconds", help="Larger = slower filter (lower cutoff frequency).")
-            st.slider("Low-pass order (Butterworth)", min_value=1, max_value=8, value=int(st.session_state["lp_order"]), key="lp_order")
+            st.number_input(
+                "Low-pass cutoff (period in seconds)",
+                min_value=0.01,
+                step=0.1,
+                key="lp_cutoff_seconds",
+                help="Larger = slower filter (lower cutoff frequency).",
+            )
+            st.slider(
+                "Low-pass order (Butterworth)",
+                min_value=1,
+                max_value=8,
+                value=int(st.session_state["lp_order"]),
+                key="lp_order",
+            )
         else:
-            st.slider("Low-pass window (points)", min_value=2, max_value=1000, value=int(st.session_state["lp_window_points"]), key="lp_window_points")
+            st.slider(
+                "Low-pass window (points)",
+                min_value=2,
+                max_value=1000,
+                value=int(st.session_state["lp_window_points"]),
+                key="lp_window_points",
+            )
 
         st.divider()
 
         # High-pass
         st.checkbox("Enable High-pass", key="hp_enabled")
         if HAS_SCIPY:
-            st.number_input("High-pass cutoff (period in seconds)", min_value=0.01, step=0.1, key="hp_cutoff_seconds", help="Smaller = stronger cutoff of low frequencies.")
-            st.slider("High-pass order (Butterworth)", min_value=1, max_value=8, value=int(st.session_state["hp_order"]), key="hp_order")
+            st.number_input(
+                "High-pass cutoff (period in seconds)",
+                min_value=0.01,
+                step=0.1,
+                key="hp_cutoff_seconds",
+                help="Smaller = stronger cutoff of low frequencies.",
+            )
+            st.slider(
+                "High-pass order (Butterworth)",
+                min_value=1,
+                max_value=8,
+                value=int(st.session_state["hp_order"]),
+                key="hp_order",
+            )
         else:
-            st.slider("High-pass window (points)", min_value=2, max_value=1000, value=int(st.session_state["hp_window_points"]), key="hp_window_points")
+            st.slider(
+                "High-pass window (points)",
+                min_value=2,
+                max_value=1000,
+                value=int(st.session_state["hp_window_points"]),
+                key="hp_window_points",
+            )
 
         st.info(
             "Application order: **Rolling → Low-pass → High-pass**.\n"

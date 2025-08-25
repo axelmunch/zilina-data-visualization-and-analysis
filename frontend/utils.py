@@ -277,7 +277,9 @@ def get_data(
 
     if data is not None:
         df = data.copy()
-        if "timestamp" in df.columns and not pd.api.types.is_datetime64_any_dtype(df["timestamp"]):
+        if "timestamp" in df.columns and not pd.api.types.is_datetime64_any_dtype(
+            df["timestamp"]
+        ):
             df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
         if len(sensors) == 0 and len(measurements) == 0:
             return df
