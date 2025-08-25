@@ -53,7 +53,7 @@ def extract_data(data: Data):
                 Point(sensor_type)
                 .tag("device", device_name)
                 .tag("sensor", sensor_id)
-                .time(timestamp, WritePrecision.NS)
+                .time(timestamp)
             )
 
             for m in measurement["measurements"]:
