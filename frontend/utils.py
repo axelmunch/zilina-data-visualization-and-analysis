@@ -11,7 +11,6 @@ from influxdb_client.client.warnings import MissingPivotFunction
 
 warnings.simplefilter("ignore", MissingPivotFunction)
 
-CSV_PATH = Path("data/sensor_data.csv")
 INFLUX_URL = "http://influxdb:8086"  # Docker Compose -> "http://influxdb:8086"
 INFLUX_TOKEN = "klQGaUK53OtG1Bzk1Ezon9N-_7fM9TSSMHOsivQoFthzGgH_53E1GhOiFoCNq8Y92y64BKx0gtML12N43fEyoA=="
 INFLUX_ORG = "my-org"
