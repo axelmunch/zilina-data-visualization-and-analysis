@@ -253,11 +253,6 @@ with st.container(border=True):
 
     # ---------- Filters & Smoothing ----------
     with st.sidebar.expander("Filters & Smoothing", expanded=False):
-        st.caption(
-            "These settings apply to **all** curves and to the **CSV export**.\n\n"
-            f"{'SciPy detected \u2714\ufe0f (Butterworth) ' if HAS_SCIPY else 'SciPy not detected \u274c (fallback rolling)'}"
-        )
-
         # Rolling mean (always available)
         st.checkbox("Enable Rolling mean", key="rolling_enabled")
         st.slider(
@@ -338,8 +333,8 @@ with st.container(border=True):
             )
 
         st.info(
-            "Application order: **Rolling → Low-pass → High-pass**.\n"
-            "If Low-pass **and** High-pass are enabled, the effect is a **band-pass**."
+            "Filters order: **Rolling → Low-pass → High-pass**.\n"
+            "If Low-pass **and** High-pass are enabled, the effect is a **Band-pass**."
         )
 
     # ---------- Sensor / measurement selection ----------
@@ -380,30 +375,6 @@ with st.container(border=True):
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("No data to display with the current selection.")
-
-    # ---------- CSV export (exactly the displayed DataFrame) ----------
-    st.sidebar.divider()
-    st.sidebar.markdown("**Export**")
-
-    tags = []
-    if st.session_state.get("rolling_enabled", False):
-        tags.append("roll")
-    if st.session_state.get("lp_enabled", False):
-        tags.append("lp")
-    if st.session_state.get("hp_enabled", False):
-        tags.append("hp")
-    tag_str = "_".join(tags) if tags else "raw"
-
-    fname = f"export_{tag_str}_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-
-    st.sidebar.download_button(
-        "Download filtered data (CSV)",
-        data=selected_data.to_csv(index=False).encode("utf-8"),
-        file_name=fname,
-        mime="text/csv",
-        key="download_filtered_csv",
-        help="Download filtered data with active filters (rolling / low-pass / high-pass).",
-    )
 
     # ---------- Detailed analysis ----------
     data_analysis(selected_data)
