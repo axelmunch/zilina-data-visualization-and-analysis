@@ -114,8 +114,7 @@ def _apply_lowpass(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(group_cols + ["timestamp"]).copy()
 
     if HAS_SCIPY:
-        cutoff_s = float(st.session_state.get("lp_cutoff_seconds", 5.0))
-        cutoff_hz = 1.0 / max(cutoff_s, 1e-9)
+        cutoff_hz = float(st.session_state.get("lp_cutoff_hz", 5.0))
         order = int(st.session_state.get("lp_order", 3))
 
         def _lp_butter(g: pd.DataFrame) -> pd.DataFrame:
@@ -166,8 +165,7 @@ def _apply_highpass(df: pd.DataFrame) -> pd.DataFrame:
     df = df.sort_values(group_cols + ["timestamp"]).copy()
 
     if HAS_SCIPY:
-        cutoff_s = float(st.session_state.get("hp_cutoff_seconds", 5.0))
-        cutoff_hz = 1.0 / max(cutoff_s, 1e-9)
+        cutoff_hz = float(st.session_state.get("hp_cutoff_hz", 5.0))
         order = int(st.session_state.get("hp_order", 3))
 
         def _hp_butter(g: pd.DataFrame) -> pd.DataFrame:
@@ -242,12 +240,12 @@ with st.container(border=True):
         # Low-pass
         st.session_state["lp_enabled"] = False
         st.session_state["lp_order"] = 3
-        st.session_state["lp_cutoff_seconds"] = 5.0
+        st.session_state["lp_cutoff_hz"] = 5.0
         st.session_state["lp_window_points"] = 25  # pandas fallback
         # High-pass
         st.session_state["hp_enabled"] = False
         st.session_state["hp_order"] = 3
-        st.session_state["hp_cutoff_seconds"] = 5.0
+        st.session_state["hp_cutoff_hz"] = 5.0
         st.session_state["hp_window_points"] = 25  # pandas fallback
         st.session_state["filters__init_done"] = True
 
@@ -282,10 +280,10 @@ with st.container(border=True):
         st.checkbox("Enable Low-pass", key="lp_enabled")
         if HAS_SCIPY:
             st.number_input(
-                "Low-pass cutoff (period in seconds)",
+                "Low-pass cutoff (period in Hz)",
                 min_value=0.01,
                 step=0.1,
-                key="lp_cutoff_seconds",
+                key="lp_cutoff_hz",
                 help="Larger = slower filter (lower cutoff frequency).",
             )
             st.slider(
@@ -310,10 +308,10 @@ with st.container(border=True):
         st.checkbox("Enable High-pass", key="hp_enabled")
         if HAS_SCIPY:
             st.number_input(
-                "High-pass cutoff (period in seconds)",
+                "High-pass cutoff (period in Hz)",
                 min_value=0.01,
                 step=0.1,
-                key="hp_cutoff_seconds",
+                key="hp_cutoff_hz",
                 help="Smaller = stronger cutoff of low frequencies.",
             )
             st.slider(
